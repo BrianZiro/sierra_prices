@@ -1,0 +1,11 @@
+// Placeholder for additional JS (e.g., form validation, auto-dismiss alerts)
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-hide alerts after 5 seconds
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }, 5000);
+    });
+});

@@ -1,0 +1,50 @@
+/* White/black theme with mobile responsiveness */
+body {
+    background-color: #f8f9fa;
+    color: #000;
+}
+
+.card {
+    border: 1px solid #ddd;
+    transition: transform 0.1s;
+}
+
+.card:hover {
+    transform: scale(1.02);
+}
+
+.btn-dark {
+    background-color: #000;
+    border-color: #000;
+}
+
+.btn-dark:hover {
+    background-color: #333;
+    border-color: #333;
+}
+
+.navbar-dark .navbar-nav .nav-link {
+    color: rgba(255,255,255,0.85);
+}
+
+.navbar-dark .navbar-nav .nav-link:hover {
+    color: #fff;
+}
+
+/* Mobile adjustments */
+@media (max-width: 576px) {
+    .card-body {
+        padding: 0.75rem;
+    }
+    .card-title {
+        font-size: 0.9rem;
+    }
+    .btn-sm {
+        font-size: 0.7rem;
+    }
+}
+
+/* Table actions */
+.table td .btn {
+    padding: 0.1rem 0.4rem;
+}
