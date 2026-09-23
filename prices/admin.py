@@ -12,6 +12,7 @@ class ProductAdmin(admin.ModelAdmin):
 
 class EmployeeProfileInline(admin.StackedInline):
     model = EmployeeProfile
+    fk_name = 'user'          # <-- tells Django which FK to use for this inline
     can_delete = False
     extra = 0
     readonly_fields = ('added_by', 'created_at')
