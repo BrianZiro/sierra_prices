@@ -1,26 +1,33 @@
 <div class="table-responsive">
-    <table class="table table-sm table-striped">
-        <thead>
+    <table class="table table-sm table-striped align-middle">
+        <thead class="table-dark">
             <tr>
+                <th>#</th>
                 <th>Email</th>
+                <th>Added By</th>
+                <th>Date Added</th>
                 <th class="text-center">Action</th>
             </tr>
         </thead>
         <tbody>
-            {% for emp in employees %}
+            {% for profile in profiles %}
             <tr>
-                <td>{{ emp.email }}</td>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ profile.user.email }}</td>
+                <td>{{ profile.added_by.email|default:"—" }}</td>
+                <td>{{ profile.created_at|date:"Y-m-d H:i" }}</td>
                 <td class="text-center">
-                    <form method="post" action="{% url 'prices:user_delete' emp.id %}" style="display:inline;">
+                    <form method="post" action="{% url 'prices:user_delete' profile.user.id %}" style="display:inline;">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remove this employee?')">
+                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                onclick="return confirm('Remove this employee?')">
                             <i class="fas fa-user-minus"></i>
                         </button>
                     </form>
                 </td>
             </tr>
             {% empty %}
-            <tr><td colspan="2" class="text-center text-muted">No employees added yet.</td></tr>
+            <tr><td colspan="5" class="text-center text-muted">No employees added yet.</td></tr>
             {% endfor %}
         </tbody>
     </table>
