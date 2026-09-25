@@ -1,67 +1,80 @@
 const CACHE_NAME = 'sierra-prices-v2';
-const urlsToCache = [
+
+const PRECACHE_URLS = [
     '/',
-    '/login/',
-    '/static/css/style.css',
-    '/static/js/main.js',
-    '/static/icons/logo.png',
     '/static/manifest.json',
-    'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
-    'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css'
+    '/static/icons/icon-192.png',
+    '/static/icons/icon-512.png',
+    '/static/icons/favicon-32x32.png',
+    '/static/icons/favicon-16x16.png',
+    '/static/icons/apple-touch-icon.png'
 ];
 
-// Install – pre-cache core assets
 self.addEventListener('install', event => {
-    self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then(cache => cache.addAll(urlsToCache))
-            .catch(err => console.warn('Pre-cache failed:', err))
+            .then(cache => cache.addAll(PRECACHE_URLS))
+            .then(() => self.skipWaiting())
     );
 });
 
-// Activate – clean old caches
 self.addEventListener('activate', event => {
     event.waitUntil(
-        caches.keys().then(keys =>
-            Promise.all(
-                keys.filter(key => key !== CACHE_NAME)
-                    .map(key => caches.delete(key))
+        caches.keys()
+            .then(keys =>
+                Promise.all(
+                    keys
+                        .filter(key => key !== CACHE_NAME)
+                        .map(key => caches.delete(key))
+                )
             )
-        ).then(() => self.clients.claim())
+            .then(() => self.clients.claim())
     );
 });
 
-// Fetch – network-first for HTML, cache-first for static
 self.addEventListener('fetch', event => {
     const req = event.request;
-    if (req.method !== 'GET') return;
 
-    // Never cache admin or Django admin URLs
-    if (req.url.includes('/admin/')) return;
+    // Only handle HTTP/HTTPS requests.
+    // Chrome extension requests cannot be stored in Cache API.
+    if (req.url.startsWith('chrome-extension://')) {
+        return;
+    }
 
-    const isHTML = req.headers.get('accept')?.includes('text/html');
+    if (!req.url.startsWith('http://') && !req.url.startsWith('https://')) {
+        return;
+    }
+
+    const isHTML = req.mode === 'navigate' ||
+                   req.headers.get('accept')?.includes('text/html');
 
     if (isHTML) {
         // Network-first for pages
         event.respondWith(
             fetch(req)
                 .then(res => {
-                    const copy = res.clone();
-                    caches.open(CACHE_NAME).then(c => c.put(req, copy));
+                    if (res.ok) {
+                        const copy = res.clone();
+                        caches.open(CACHE_NAME).then(c => c.put(req, copy));
+                    }
                     return res;
                 })
-                .catch(() => caches.match(req).then(r => r || caches.match('/')))
+                .catch(() =>
+                    caches.match(req).then(r => r || caches.match('/'))
+                )
         );
     } else {
         // Cache-first for static assets
         event.respondWith(
-            caches.match(req).then(cached => cached || fetch(req).then(res => {
-                const copy = res.clone();
-                caches.open(CACHE_NAME).then(c => c.put(req, copy));
-                return res;
-            }))
+            caches.match(req).then(cached =>
+                cached || fetch(req).then(res => {
+                    if (res.ok) {
+                        const copy = res.clone();
+                        caches.open(CACHE_NAME).then(c => c.put(req, copy));
+                    }
+                    return res;
+                })
+            )
         );
     }
 });
