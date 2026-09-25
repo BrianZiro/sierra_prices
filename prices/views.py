@@ -60,7 +60,11 @@ def logout_view(request):
 def dashboard(request):
     if request.user.is_staff or request.user.is_superuser:
         return redirect('prices:staff_dashboard')
-    return redirect('prices:employee_dashboard')
+
+    if hasattr(request.user, 'employee_profile'):
+        return redirect('prices:employee_dashboard')
+
+    return redirect('prices:login')
 
 
 # ----- Employee Dashboard -----
