@@ -12,11 +12,11 @@ class ProductForm(forms.ModelForm):
         cleaned_data = super().clean()
         buying_price = cleaned_data.get('buying_price')
         price = cleaned_data.get('price')
-        if buying_price is not None and price is not None:
-            if buying_price >= price:
-                raise forms.ValidationError(
-                    'Buying price must be less than the selling price.'
-                )
+
+        if buying_price is not None and price is not None and buying_price >= price:
+            # Attach the error to the buying_price field only (no __all__ duplicate)
+            self.add_error('buying_price', 'Buying price must be less than the selling price.')
+
         return cleaned_data
 
 
@@ -43,7 +43,7 @@ class EmployeeCreationForm(forms.ModelForm):
         password = cleaned_data.get('password')
         confirm_password = cleaned_data.get('confirm_password')
         if password and confirm_password and password != confirm_password:
-            raise forms.ValidationError('Passwords do not match.')
+            self.add_error('confirm_password', 'Passwords do not match.')
         return cleaned_data
 
     def save(self, added_by=None, commit=True):
@@ -78,7 +78,7 @@ class StaffCreationForm(forms.ModelForm):
         password = cleaned_data.get('password')
         confirm_password = cleaned_data.get('confirm_password')
         if password and confirm_password and password != confirm_password:
-            raise forms.ValidationError('Passwords do not match.')
+            self.add_error('confirm_password', 'Passwords do not match.')
         return cleaned_data
 
     def save(self, commit=True):

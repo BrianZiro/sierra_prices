@@ -1,6 +1,6 @@
 import csv
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
@@ -97,6 +97,38 @@ def staff_dashboard(request):
     })
 
 
+# ----- Helper: re-render dashboard with bound forms -----
+def _render_dashboard_with_form(
+    request,
+    product_form=None,
+    edit_form=None,
+    edit_form_id=None,
+    open_modal=None,
+):
+    """Re-render the dashboard with bound forms so modals reopen with inline errors."""
+    products = Product.objects.all().order_by('name')
+
+    context = {
+        'products': products,
+        'product_form': product_form,
+        'edit_form': edit_form,
+        'edit_form_id': edit_form_id,
+        'open_modal': open_modal,
+    }
+
+    if request.user.is_staff or request.user.is_superuser:
+        if request.user.is_superuser:
+            profiles = EmployeeProfile.objects.select_related('user', 'added_by').all().order_by('-created_at')
+        else:
+            profiles = EmployeeProfile.objects.select_related('user', 'added_by').filter(
+                added_by=request.user
+            ).order_by('-created_at')
+        context['profiles'] = profiles
+        return render(request, 'staff_dashboard.html', context)
+
+    return render(request, 'employee_dashboard.html', context)
+
+
 # ----- Product CRUD -----
 @login_required
 def product_add(request):
@@ -105,10 +137,13 @@ def product_add(request):
         if form.is_valid():
             form.save()
             messages.success(request, 'Product added.')
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f'{field}: {error}')
+            return redirect('prices:dashboard')
+        # Re-render with the open modal + inline errors
+        return _render_dashboard_with_form(
+            request,
+            product_form=form,
+            open_modal='addModal',
+        )
     return redirect('prices:dashboard')
 
 
@@ -120,10 +155,14 @@ def product_edit(request, pk):
         if form.is_valid():
             form.save()
             messages.success(request, 'Product updated.')
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f'{field}: {error}')
+            return redirect('prices:dashboard')
+        # Re-render with the specific edit modal open + inline errors
+        return _render_dashboard_with_form(
+            request,
+            edit_form=form,
+            edit_form_id=product.id,
+            open_modal=f'editModal{product.id}',
+        )
     return redirect('prices:dashboard')
 
 
@@ -155,6 +194,7 @@ def import_csv(request):
         if not csv_file.name.endswith('.csv'):
             messages.error(request, 'File must be CSV.')
             return redirect('prices:dashboard')
+
         decoded = csv_file.read().decode('utf-8').splitlines()
         reader = csv.DictReader(decoded)
 
@@ -164,9 +204,11 @@ def import_csv(request):
             name = (row.get('name') or '').strip()
             price = (row.get('price') or '').strip()
             buying_price = (row.get('buying_price') or '0').strip()
+
             if not name or not price:
                 skipped += 1
                 continue
+
             try:
                 price_val = float(price)
                 buying_val = float(buying_price)
@@ -224,12 +266,15 @@ def user_add(request):
 def user_delete(request, user_id):
     if not (request.user.is_staff or request.user.is_superuser):
         return redirect('prices:dashboard')
+
     user = get_object_or_404(User, pk=user_id, is_staff=False, is_superuser=False)
+
     if not request.user.is_superuser:
         profile = getattr(user, 'employee_profile', None)
         if profile is None or profile.added_by != request.user:
             messages.error(request, 'You can only remove employees you added.')
             return redirect('prices:staff_dashboard')
+
     user.delete()
     messages.success(request, 'Employee removed.')
     return redirect('prices:staff_dashboard')
