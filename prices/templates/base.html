@@ -7,33 +7,41 @@
     <meta name="theme-color" content="#000000">
 
     <!-- Primary Meta Tags -->
-    <title>{% block title %}Sierra Hardware – Price Checker{% endblock %}</title>
-    <meta name="title" content="Sierra Hardware – Price Checker">
-    <meta name="description" content="Sierra Hardware price checker. Quickly search, filter, and check hardware product prices. Staff can manage products and employees.">
-    <meta name="keywords" content="Sierra Hardware, price checker, hardware prices, product prices, Kenya, Ksh, hardware store, price list">
+    <title>{% block title %}Sierra Prices – Hardware Price Checker{% endblock %}</title>
+    <meta name="title" content="Sierra Prices – Hardware Price Checker">
+    <meta name="description" content="Quickly search, filter, and check hardware product prices with Sierra Prices.">
+    <meta name="keywords" content="Sierra Prices, Sierra Hardware, price checker, hardware prices, product prices, Kenya, Ksh, hardware store, price list">
     <meta name="author" content="Ziro Creative Agency">
     <meta name="robots" content="index, follow">
     <meta name="language" content="English">
     <meta name="revisit-after" content="7 days">
 
-    <!-- Open Graph / Facebook -->
+    <!-- Open Graph / Facebook / WhatsApp / LinkedIn -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="{{ request.build_absolute_uri }}">
-    <meta property="og:title" content="Sierra Hardware – Price Checker">
-    <meta property="og:description" content="Quickly search, filter, and check hardware product prices.">
-    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'icons/logo.png' %}">
-    <meta property="og:site_name" content="Sierra Hardware">
+    <meta property="og:url" content="https://sierraprices.zirocreativeagency.co.ke/">
+    <meta property="og:title" content="Sierra Prices – Hardware Price Checker">
+    <meta property="og:description" content="Quickly search, filter, and check hardware product prices with Sierra Prices.">
+    <meta property="og:image" content="https://sierraprices.zirocreativeagency.co.ke/static/icons/logo.png">
+    <meta property="og:image:secure_url" content="https://sierraprices.zirocreativeagency.co.ke/static/icons/logo.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="512">
+    <meta property="og:image:height" content="512">
+    <meta property="og:image:alt" content="Sierra Prices – Hardware Price Checker">
+    <meta property="og:site_name" content="Sierra Prices">
+    <meta property="og:locale" content="en_KE">
 
-    <!-- Twitter -->
+    <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:url" content="{{ request.build_absolute_uri }}">
-    <meta name="twitter:title" content="Sierra Hardware – Price Checker">
-    <meta name="twitter:description" content="Quickly search, filter, and check hardware product prices.">
-    <meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'icons/logo.png' %}">
+    <meta name="twitter:site" content="@zirocreative">
+    <meta name="twitter:creator" content="@zirocreative">
+    <meta name="twitter:url" content="https://sierraprices.zirocreativeagency.co.ke/">
+    <meta name="twitter:title" content="Sierra Prices – Hardware Price Checker">
+    <meta name="twitter:description" content="Quickly search, filter, and check hardware product prices with Sierra Prices.">
+    <meta name="twitter:image" content="https://sierraprices.zirocreativeagency.co.ke/static/icons/logo.png">
+    <meta name="twitter:image:alt" content="Sierra Prices – Hardware Price Checker">
 
     <!-- PWA / Mobile -->
     <link rel="manifest" href="{% static 'manifest.json' %}">
-
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -46,6 +54,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="{% static 'icons/favicon-32x32.png' %}?v=2">
     <link rel="icon" type="image/png" sizes="16x16" href="{% static 'icons/favicon-16x16.png' %}?v=2">
     <link rel="shortcut icon" href="{% static 'icons/favicon-32x32.png' %}?v=2">
+
     <!-- Bootstrap 5 CSS -->
     <link
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
