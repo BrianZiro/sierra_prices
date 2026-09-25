@@ -38,11 +38,16 @@ self.addEventListener('activate', event => {
 // Fetch strategies
 self.addEventListener('fetch', event => {
     const req = event.request;
+
+    // Only handle GET requests
     if (req.method !== 'GET') return;
+
+    // Only handle http(s) — skip chrome-extension://, moz-extension://, data:, etc.
+    if (!req.url.startsWith('http://') && !req.url.startsWith('https://')) return;
 
     const url = new URL(req.url);
 
-    // Never cache admin
+    // Never cache Django admin
     if (url.pathname.startsWith('/admin/')) return;
 
     // API: network-first, fallback to cache
@@ -50,8 +55,11 @@ self.addEventListener('fetch', event => {
         event.respondWith(
             fetch(req)
                 .then(res => {
-                    const copy = res.clone();
-                    caches.open(RUNTIME_CACHE).then(c => c.put(req, copy));
+                    // Only cache successful responses
+                    if (res && res.status === 200) {
+                        const copy = res.clone();
+                        caches.open(RUNTIME_CACHE).then(c => c.put(req, copy));
+                    }
                     return res;
                 })
                 .catch(() => caches.match(req))
@@ -64,8 +72,10 @@ self.addEventListener('fetch', event => {
         event.respondWith(
             fetch(req)
                 .then(res => {
-                    const copy = res.clone();
-                    caches.open(RUNTIME_CACHE).then(c => c.put(req, copy));
+                    if (res && res.status === 200) {
+                        const copy = res.clone();
+                        caches.open(RUNTIME_CACHE).then(c => c.put(req, copy));
+                    }
                     return res;
                 })
                 .catch(() =>
@@ -75,12 +85,18 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    // Static assets: cache-first
+    // Static assets: cache-first, then network
     event.respondWith(
-        caches.match(req).then(cached => cached || fetch(req).then(res => {
-            const copy = res.clone();
-            caches.open(RUNTIME_CACHE).then(c => c.put(req, copy));
-            return res;
-        }))
+        caches.match(req).then(cached => {
+            if (cached) return cached;
+            return fetch(req).then(res => {
+                // Only cache valid, same-origin or CDN http(s) responses
+                if (res && res.status === 200 && (res.type === 'basic' || res.type === 'cors')) {
+                    const copy = res.clone();
+                    caches.open(RUNTIME_CACHE).then(c => c.put(req, copy));
+                }
+                return res;
+            });
+        })
     );
 });
