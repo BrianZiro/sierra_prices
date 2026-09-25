@@ -1,12 +1,23 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import Product
+from .models import Product, EmployeeProfile
 
 
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['name', 'price']
+        fields = ['name', 'buying_price', 'price']
+
+    def clean(self):
+        cleaned_data = super().clean()
+        buying_price = cleaned_data.get('buying_price')
+        price = cleaned_data.get('price')
+        if buying_price is not None and price is not None:
+            if buying_price >= price:
+                raise forms.ValidationError(
+                    'Buying price must be less than the selling price.'
+                )
+        return cleaned_data
 
 
 class UserEmailForm(forms.Form):

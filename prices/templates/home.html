@@ -5,7 +5,6 @@
 <div class="row">
     <div class="col-12">
         <h2 class="text-center mb-4"><i class="fas fa-search-dollar me-2"></i>Check Prices</h2>
-        <!-- Search only -->
         <form method="get" class="row g-3 mb-4">
             <div class="col-md-8 offset-md-2">
                 <div class="input-group">
@@ -26,7 +25,8 @@
                 <div class="card-body text-center">
                     <i class="fas fa-box fa-2x text-secondary mb-2"></i>
                     <h6 class="card-title">{{ product.name }}</h6>
-                    <p class="card-text fw-bold">Ksh {{ product.price }}</p>
+                    <p class="card-text fw-bold mb-1">Ksh {{ product.price }}</p>
+                    <small class="text-muted">Buying: Ksh {{ product.buying_price }}</small>
                 </div>
             </div>
         </div>

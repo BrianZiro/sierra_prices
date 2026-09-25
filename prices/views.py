@@ -106,7 +106,9 @@ def product_add(request):
             form.save()
             messages.success(request, 'Product added.')
         else:
-            messages.error(request, 'Invalid data.')
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
     return redirect('prices:dashboard')
 
 
@@ -119,7 +121,9 @@ def product_edit(request, pk):
             form.save()
             messages.success(request, 'Product updated.')
         else:
-            messages.error(request, 'Invalid data.')
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
     return redirect('prices:dashboard')
 
 
@@ -138,9 +142,9 @@ def export_csv(request):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="products.csv"'
     writer = csv.writer(response)
-    writer.writerow(['name', 'price'])
+    writer.writerow(['name', 'buying_price', 'price'])
     for p in products:
-        writer.writerow([p.name, p.price])
+        writer.writerow([p.name, p.buying_price, p.price])
     return response
 
 
@@ -153,15 +157,37 @@ def import_csv(request):
             return redirect('prices:dashboard')
         decoded = csv_file.read().decode('utf-8').splitlines()
         reader = csv.DictReader(decoded)
+
+        created = 0
+        skipped = 0
         for row in reader:
-            name = row.get('name', '').strip()
-            price = row.get('price', '').strip()
-            if name and price:
-                try:
-                    Product.objects.update_or_create(name=name, defaults={'price': price})
-                except Exception:
-                    pass
-        messages.success(request, 'CSV imported successfully.')
+            name = (row.get('name') or '').strip()
+            price = (row.get('price') or '').strip()
+            buying_price = (row.get('buying_price') or '0').strip()
+            if not name or not price:
+                skipped += 1
+                continue
+            try:
+                price_val = float(price)
+                buying_val = float(buying_price)
+            except ValueError:
+                skipped += 1
+                continue
+
+            if buying_val >= price_val:
+                skipped += 1
+                continue
+
+            Product.objects.update_or_create(
+                name=name,
+                defaults={'price': price_val, 'buying_price': buying_val},
+            )
+            created += 1
+
+        messages.success(
+            request,
+            f'CSV imported. {created} product(s) saved, {skipped} skipped (invalid or BP ≥ price).'
+        )
     else:
         messages.error(request, 'No file selected.')
     return redirect('prices:dashboard')
@@ -179,7 +205,6 @@ def user_add(request):
             password = form.cleaned_data['password']
             email = form.cleaned_data['email']
             form.save(added_by=request.user)
-            # Show password ONCE via flash message (not stored anywhere)
             messages.success(
                 request,
                 mark_safe(

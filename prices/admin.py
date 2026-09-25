@@ -6,13 +6,13 @@ from .models import Product, EmployeeProfile
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'price')
+    list_display = ('name', 'buying_price', 'price')
     search_fields = ('name',)
 
 
 class EmployeeProfileInline(admin.StackedInline):
     model = EmployeeProfile
-    fk_name = 'user'          # <-- tells Django which FK to use for this inline
+    fk_name = 'user'
     can_delete = False
     extra = 0
     readonly_fields = ('added_by', 'created_at')
