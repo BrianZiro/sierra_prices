@@ -26,17 +26,27 @@ def home(request):
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('prices:dashboard')
+
     if request.method == 'POST':
         email = request.POST.get('email', '').strip()
         password = request.POST.get('password', '')
+
         if email and password:
-            user = authenticate(request, username=email, password=password)
+            try:
+                user = User.objects.get(email=email)
+                if not user.check_password(password):
+                    user = None
+            except User.DoesNotExist:
+                user = None
+
             if user is not None:
                 login(request, user)
                 return redirect('prices:dashboard')
+
             messages.error(request, 'Invalid email or password.')
         else:
             messages.error(request, 'Please fill in all fields.')
+
     return render(request, 'login.html')
 
 
