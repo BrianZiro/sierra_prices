@@ -1,80 +1,86 @@
-const CACHE_NAME = 'sierra-prices-v2';
+const CACHE_NAME = 'sierra-prices-v3';
+const RUNTIME_CACHE = 'sierra-runtime-v3';
 
 const PRECACHE_URLS = [
     '/',
+    '/login/',
+    '/static/css/style.css',
+    '/static/js/main.js',
+    '/static/icons/logo.png',
     '/static/manifest.json',
-    '/static/icons/icon-192.png',
-    '/static/icons/icon-512.png',
-    '/static/icons/favicon-32x32.png',
-    '/static/icons/favicon-16x16.png',
-    '/static/icons/apple-touch-icon.png'
+    'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
+    'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css'
 ];
 
+// Install – pre-cache
 self.addEventListener('install', event => {
+    self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => cache.addAll(PRECACHE_URLS))
-            .then(() => self.skipWaiting())
+            .catch(err => console.warn('Pre-cache failed:', err))
     );
 });
 
+// Activate – clean old caches
 self.addEventListener('activate', event => {
     event.waitUntil(
-        caches.keys()
-            .then(keys =>
-                Promise.all(
-                    keys
-                        .filter(key => key !== CACHE_NAME)
-                        .map(key => caches.delete(key))
-                )
+        caches.keys().then(keys =>
+            Promise.all(
+                keys.filter(k => k !== CACHE_NAME && k !== RUNTIME_CACHE)
+                    .map(k => caches.delete(k))
             )
-            .then(() => self.clients.claim())
+        ).then(() => self.clients.claim())
     );
 });
 
+// Fetch strategies
 self.addEventListener('fetch', event => {
     const req = event.request;
+    if (req.method !== 'GET') return;
 
-    // Only handle HTTP/HTTPS requests.
-    // Chrome extension requests cannot be stored in Cache API.
-    if (req.url.startsWith('chrome-extension://')) {
-        return;
-    }
+    const url = new URL(req.url);
 
-    if (!req.url.startsWith('http://') && !req.url.startsWith('https://')) {
-        return;
-    }
+    // Never cache admin
+    if (url.pathname.startsWith('/admin/')) return;
 
-    const isHTML = req.mode === 'navigate' ||
-                   req.headers.get('accept')?.includes('text/html');
-
-    if (isHTML) {
-        // Network-first for pages
+    // API: network-first, fallback to cache
+    if (url.pathname.startsWith('/api/')) {
         event.respondWith(
             fetch(req)
                 .then(res => {
-                    if (res.ok) {
-                        const copy = res.clone();
-                        caches.open(CACHE_NAME).then(c => c.put(req, copy));
-                    }
+                    const copy = res.clone();
+                    caches.open(RUNTIME_CACHE).then(c => c.put(req, copy));
+                    return res;
+                })
+                .catch(() => caches.match(req))
+        );
+        return;
+    }
+
+    // HTML pages: network-first, fallback to cache, then to '/'
+    if (req.headers.get('accept')?.includes('text/html')) {
+        event.respondWith(
+            fetch(req)
+                .then(res => {
+                    const copy = res.clone();
+                    caches.open(RUNTIME_CACHE).then(c => c.put(req, copy));
                     return res;
                 })
                 .catch(() =>
                     caches.match(req).then(r => r || caches.match('/'))
                 )
         );
-    } else {
-        // Cache-first for static assets
-        event.respondWith(
-            caches.match(req).then(cached =>
-                cached || fetch(req).then(res => {
-                    if (res.ok) {
-                        const copy = res.clone();
-                        caches.open(CACHE_NAME).then(c => c.put(req, copy));
-                    }
-                    return res;
-                })
-            )
-        );
+        return;
     }
+
+    // Static assets: cache-first
+    event.respondWith(
+        caches.match(req).then(cached => cached || fetch(req).then(res => {
+            const copy = res.clone();
+            caches.open(RUNTIME_CACHE).then(c => c.put(req, copy));
+            return res;
+        }))
+    );
 });

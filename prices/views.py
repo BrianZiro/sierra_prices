@@ -8,8 +8,11 @@ from django.http import HttpResponse
 from django.utils.safestring import mark_safe
 from django.http import HttpResponse
 from django.contrib.staticfiles import finders
+from django.utils import timezone
 from .models import Product, EmployeeProfile
 from .forms import ProductForm, EmployeeCreationForm
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
 
 
 # ----- Public Home -----
@@ -303,3 +306,27 @@ def service_worker(request):
 
 def manifest(request):
     return render(request, 'manifest.json', content_type='application/json')
+
+
+@require_GET
+def api_products(request):
+    """Return all products as JSON. Cached by the service worker."""
+    products = Product.objects.all().order_by('name').values(
+        'id', 'name', 'buying_price', 'price'
+    )
+    data = {
+        'updated_at': timezone.now().isoformat(),
+        'count': len(products),
+        'products': [
+            {
+                'id': p['id'],
+                'name': p['name'],
+                'buying_price': str(p['buying_price']),
+                'price': str(p['price']),
+            }
+            for p in products
+        ],
+    }
+    response = JsonResponse(data)
+    response['Cache-Control'] = 'no-cache'   # let the SW manage cache
+    return response

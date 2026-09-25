@@ -5,11 +5,14 @@
 <div class="row">
     <div class="col-12">
         <h2 class="text-center mb-4"><i class="fas fa-search-dollar me-2"></i>Check Prices</h2>
-        <form method="get" class="row g-3 mb-4">
+
+        <div id="sync-status" class="text-center mb-3 small text-muted"></div>
+
+        <form id="search-form" class="row g-3 mb-4" onsubmit="return false;">
             <div class="col-md-8 offset-md-2">
                 <div class="input-group">
-                    <input type="text" name="search" class="form-control" placeholder="Search for a product..." value="{{ search_query }}">
-                    <button type="submit" class="btn btn-dark">
+                    <input type="text" id="search-input" class="form-control" placeholder="Search for a product...">
+                    <button type="button" id="search-btn" class="btn btn-dark">
                         <i class="fas fa-search"></i>
                     </button>
                 </div>
@@ -18,23 +21,94 @@
     </div>
 </div>
 
-<div class="row">
-    {% for product in products %}
-        <div class="col-6 col-md-4 col-lg-3 mb-3">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body text-center">
-                    <i class="fas fa-box fa-2x text-secondary mb-2"></i>
-                    <h6 class="card-title">{{ product.name }}</h6>
-                    <p class="card-text fw-bold mb-1">Ksh {{ product.price }}</p>
-                    <small class="text-muted">Buying: Ksh {{ product.buying_price }}</small>
+<div class="row" id="product-grid">
+    <div class="col-12 text-center text-muted py-4">
+        <i class="fas fa-spinner fa-spin fa-2x mb-2"></i>
+        <p>Loading products...</p>
+    </div>
+</div>
+
+<script>
+(function () {
+    const grid = document.getElementById('product-grid');
+    const searchInput = document.getElementById('search-input');
+    const statusEl = document.getElementById('sync-status');
+
+    let allProducts = [];
+
+    function formatKsh(value) {
+        return 'Ksh ' + parseFloat(value).toFixed(2);
+    }
+
+    function render(products) {
+        if (!products.length) {
+            grid.innerHTML = `
+                <div class="col-12 text-center text-muted">
+                    <i class="fas fa-exclamation-circle fa-3x mb-2"></i>
+                    <p>No products found.</p>
+                </div>`;
+            return;
+        }
+        grid.innerHTML = products.map(p => `
+            <div class="col-6 col-md-4 col-lg-3 mb-3">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="fas fa-box fa-2x text-secondary mb-2"></i>
+                        <h6 class="card-title">${p.name}</h6>
+                        <p class="card-text fw-bold mb-1">${formatKsh(p.price)}</p>
+                        <small class="text-muted">Buying: ${formatKsh(p.buying_price)}</small>
+                    </div>
                 </div>
             </div>
-        </div>
-    {% empty %}
-        <div class="col-12 text-center text-muted">
-            <i class="fas fa-exclamation-circle fa-3x mb-2"></i>
-            <p>No products found.</p>
-        </div>
-    {% endfor %}
-</div>
+        `).join('');
+    }
+
+    function filterAndRender() {
+        const q = searchInput.value.trim().toLowerCase();
+        const filtered = q
+            ? allProducts.filter(p => p.name.toLowerCase().includes(q))
+            : allProducts;
+        render(filtered);
+    }
+
+    async function loadProducts() {
+        statusEl.textContent = navigator.onLine ? 'Syncing…' : 'Offline – showing cached prices';
+        try {
+            const res = await fetch('/api/products/', { headers: { 'Accept': 'application/json' } });
+            const data = await res.json();
+            allProducts = data.products || [];
+            // Persist to localStorage for extra resilience
+            localStorage.setItem('sierra_products', JSON.stringify({
+                products: allProducts,
+                updated_at: data.updated_at
+            }));
+            statusEl.textContent = 'Updated ' + new Date(data.updated_at).toLocaleTimeString();
+            filterAndRender();
+        } catch (err) {
+            // Fall back to localStorage
+            const cached = localStorage.getItem('sierra_products');
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                allProducts = parsed.products || [];
+                statusEl.textContent = 'Offline – last updated ' +
+                    new Date(parsed.updated_at).toLocaleString();
+                filterAndRender();
+            } else {
+                statusEl.textContent = 'No data available offline yet.';
+            }
+        }
+    }
+
+    searchInput.addEventListener('input', filterAndRender);
+    document.getElementById('search-btn').addEventListener('click', filterAndRender);
+
+    window.addEventListener('online', loadProducts);
+    window.addEventListener('offline', () => {
+        statusEl.textContent = 'Offline – showing cached prices';
+    });
+
+    // Initial load
+    loadProducts();
+})();
+</script>
 {% endblock %}

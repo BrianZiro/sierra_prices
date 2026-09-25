@@ -27,4 +27,5 @@ urlpatterns = [
     # PWA
     path('sw.js', views.service_worker, name='service_worker'),
     path('manifest.json', views.manifest, name='manifest'),
+    path('api/products/', views.api_products, name='api_products'),
 ]
