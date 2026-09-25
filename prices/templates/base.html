@@ -1,43 +1,81 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Sierra Hardware - Price Check</title>
-    <link rel="manifest" href="{% url 'prices:manifest' %}">
-    <!-- Bootstrap 5 CSS (light) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="theme-color" content="#000000">
+
+    <!-- Primary Meta Tags -->
+    <title>{% block title %}Sierra Hardware – Price Checker{% endblock %}</title>
+    <meta name="title" content="Sierra Hardware – Price Checker">
+    <meta name="description" content="Sierra Hardware price checker. Quickly search, filter, and check hardware product prices. Staff can manage products and employees.">
+    <meta name="keywords" content="Sierra Hardware, price checker, hardware prices, product prices, Kenya, Ksh, hardware store, price list">
+    <meta name="author" content="Ziro Creative Agency">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="revisit-after" content="7 days">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:title" content="Sierra Hardware – Price Checker">
+    <meta property="og:description" content="Quickly search, filter, and check hardware product prices.">
+    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'icons/logo.png' %}">
+    <meta property="og:site_name" content="Sierra Hardware">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="{{ request.build_absolute_uri }}">
+    <meta name="twitter:title" content="Sierra Hardware – Price Checker">
+    <meta name="twitter:description" content="Quickly search, filter, and check hardware product prices.">
+    <meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'icons/logo.png' %}">
+
+    <!-- PWA / Apple -->
+<link rel="manifest" href="{% static 'manifest.json' %}">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sierra Prices">
+<link rel="apple-touch-icon" href="{% static 'icons/apple-touch-icon.png' %}">
+
+<!-- Favicons -->
+<link rel="icon" type="image/png" sizes="32x32" href="{% static 'icons/favicon-32x32.png' %}">
+<link rel="icon" type="image/png" sizes="16x16" href="{% static 'icons/favicon-16x16.png' %}">
+<link rel="shortcut icon" href="{% static 'icons/favicon-32x32.png' %}">
+
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome 6 (free) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <!-- Custom CSS -->
-    {% load static %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'prices:home' %}">
-                <i class="fas fa-tools me-2"></i>Sierra Hardware
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'prices:home' %}">
+                <img src="{% static 'icons/logo.png' %}" alt="Sierra Hardware" height="36" class="me-2">
+                Sierra Hardware
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     {% if user.is_authenticated %}
                         <li class="nav-item">
-                            <span class="nav-link"><i class="fas fa-user me-1"></i>{{ user.email }}</span>
+                            <span class="nav-link"><i class="fas fa-user-circle me-1"></i>{{ user.email }}</span>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'prices:dashboard' %}"><i class="fas fa-tachometer-alt me-1"></i>Dashboard</a>
+                            <a class="nav-link" href="{% url 'prices:dashboard' %}"><i class="fas fa-gauge-high me-1"></i>Dashboard</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'prices:logout' %}"><i class="fas fa-sign-out-alt me-1"></i>Logout</a>
+                            <a class="nav-link" href="{% url 'prices:logout' %}"><i class="fas fa-right-from-bracket me-1"></i>Logout</a>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'prices:login' %}"><i class="fas fa-sign-in-alt me-1"></i>Login</a>
+                            <a class="nav-link" href="{% url 'prices:login' %}"><i class="fas fa-right-to-bracket me-1"></i>Login</a>
                         </li>
                     {% endif %}
                 </ul>
@@ -49,8 +87,17 @@
         {% if messages %}
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {% if message.tags == 'success' %}
+                        <i class="fas fa-circle-check me-1"></i>
+                    {% elif message.tags == 'error' or message.tags == 'danger' %}
+                        <i class="fas fa-circle-exclamation me-1"></i>
+                    {% elif message.tags == 'warning' %}
+                        <i class="fas fa-triangle-exclamation me-1"></i>
+                    {% else %}
+                        <i class="fas fa-circle-info me-1"></i>
+                    {% endif %}
                     {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             {% endfor %}
         {% endif %}
@@ -58,23 +105,35 @@
     </main>
 
     <footer class="bg-light text-center text-muted py-3 border-top">
-        <small>&copy; 2026 Sierra Hardware – Price Checker</small>
+        <small>
+            &copy; 2026 Sierra Hardware – Price Checker.
+            Powered by
+            <a href="https://zirocreativeagency.co.ke" target="_blank" rel="noopener noreferrer" class="text-decoration-none fw-semibold text-dark">
+                Ziro Creative Agency
+            </a>
+        </small>
     </footer>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom JS -->
     <script src="{% static 'js/main.js' %}"></script>
-    {% if user.is_authenticated %}
-    <!-- Service Worker registration -->
+
+    <!-- Service Worker registration (PWA) -->
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register("{% url 'prices:service_worker' %}")
-                .then(() => console.log('SW registered'))
-                .catch(err => console.log('SW failed', err));
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register("{% static 'service-worker.js' %}")
+                    .then(function (reg) {
+                        console.log('Service Worker registered. Scope:', reg.scope);
+                    })
+                    .catch(function (err) {
+                        console.warn('Service Worker registration failed:', err);
+                    });
+            });
         }
     </script>
-    {% endif %}
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>

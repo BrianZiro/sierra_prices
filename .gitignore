@@ -3,3 +3,8 @@ __pycache__/
 *.pyc
 .env
 staticfiles/
+
+
+prices/static/icons/icon-*.png
+prices/static/icons/apple-touch-icon.png
+prices/static/icons/favicon-*.png
