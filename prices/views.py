@@ -6,6 +6,8 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import HttpResponse
 from django.utils.safestring import mark_safe
+from django.http import HttpResponse
+from django.contrib.staticfiles import finders
 from .models import Product, EmployeeProfile
 from .forms import ProductForm, EmployeeCreationForm
 
@@ -282,8 +284,22 @@ def user_delete(request, user_id):
 
 # ----- PWA -----
 def service_worker(request):
-    return render(request, 'service-worker.js', content_type='application/javascript')
+    file_path = finders.find('service-worker.js')
 
+    if not file_path:
+        return HttpResponse(
+            'Service worker file not found.',
+            status=404,
+            content_type='text/plain'
+        )
+
+    with open(file_path, 'r', encoding='utf-8') as file:
+        content = file.read()
+
+    return HttpResponse(
+        content,
+        content_type='application/javascript'
+    )
 
 def manifest(request):
     return render(request, 'manifest.json', content_type='application/json')
