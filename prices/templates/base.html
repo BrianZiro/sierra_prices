@@ -102,7 +102,19 @@
             </button>
 
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto align-items-lg-center">
+
+                    <!-- Install App Button (hidden by default) -->
+                    <li class="nav-item me-lg-2" id="install-app-item" style="display:none;">
+                        <button
+                            id="install-app-btn"
+                            class="btn btn-warning btn-sm fw-semibold"
+                            type="button"
+                        >
+                            <i class="fas fa-download me-1"></i>
+                            Install Sierra Prices
+                        </button>
+                    </li>
 
                     {% if user.is_authenticated %}
 
@@ -223,31 +235,69 @@
     <!-- Custom JS -->
     <script src="{% static 'js/main.js' %}"></script>
 
-    <!-- Service Worker Registration -->
+    <!-- Service Worker Registration + PWA Install Button -->
     <script>
+    (function () {
+        // ---- Service Worker ----
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function () {
-
                 navigator.serviceWorker.register("{% url 'prices:service_worker' %}")
                     .then(function (reg) {
-
-                        console.log(
-                            'Service Worker registered. Scope:',
-                            reg.scope
-                        );
-
+                        console.log('Service Worker registered. Scope:', reg.scope);
                     })
                     .catch(function (err) {
-
-                        console.warn(
-                            'Service Worker registration failed:',
-                            err
-                        );
-
+                        console.warn('Service Worker registration failed:', err);
                     });
-
             });
         }
+
+        // ---- PWA Install Prompt ----
+        let deferredPrompt = null;
+        const installItem = document.getElementById('install-app-item');
+        const installBtn  = document.getElementById('install-app-btn');
+
+        // Hide if user previously dismissed or already installed
+        const dismissed = localStorage.getItem('pwa-install-dismissed') === '1';
+        const standalone =
+            window.matchMedia('(display-mode: standalone)').matches ||
+            window.navigator.standalone === true;
+
+        // Browser says the app is installable
+        window.addEventListener('beforeinstallprompt', function (e) {
+            e.preventDefault();           // stop the mini-infobar on mobile
+            deferredPrompt = e;
+
+            if (!dismissed && !standalone) {
+                installItem.style.display = 'block';
+            }
+        });
+
+        // User clicks Install
+        installBtn && installBtn.addEventListener('click', async function () {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log('PWA install outcome:', outcome);
+            deferredPrompt = null;
+            installItem.style.display = 'none';
+            if (outcome !== 'accepted') {
+                localStorage.setItem('pwa-install-dismissed', '1');
+            }
+        });
+
+        // App installed
+        window.addEventListener('appinstalled', function () {
+            console.log('PWA installed');
+            installItem.style.display = 'none';
+            deferredPrompt = null;
+            localStorage.setItem('pwa-install-dismissed', '1');
+        });
+
+        // If already running as installed app, never show the button
+        if (standalone) {
+            installItem.style.display = 'none';
+        }
+    })();
     </script>
 
     {% block extra_js %}{% endblock %}
